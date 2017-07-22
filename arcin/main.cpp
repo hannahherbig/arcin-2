@@ -61,7 +61,7 @@ static Pin led2 = GPIOA[9];
 
 USB_f1 usb(USB, dev_desc_p, conf_desc_p);
 
-#define NUM_LEDS 27
+#define NUM_LEDS 24
 
 class WS2812B {
 	private:
@@ -118,15 +118,15 @@ class WS2812B {
 			
 			Time::sleep(1);
 			
-			memcpy(grb, 0, NUM_LEDS * 3);
+			memset(grb, 0, NUM_LEDS * 3);
 
 			busy = false;
 
 			refresh();
 		}
 
-		void set_range(uint32_t lo, uint32_t hi, uint8_t r, uint8_t g, uint8_t b) {
-			for (uint32_t i = lo, j = lo * 3; i <= hi; ++i) {
+		void set_range(uint32_t lo, uint32_t cnt, uint8_t r, uint8_t g, uint8_t b) {
+			for (uint32_t j = lo * 3; cnt--;) {
 				grb[j++] = g;
 				grb[j++] = r;
 				grb[j++] = b;
@@ -207,9 +207,9 @@ class HID_arcin : public USB_HID {
 
 			for (uint32_t i = 0; i < 8; ++i) {
 				if (more & (1 << i)) {
-					ws2812b.set_range(i * 2, i * 2 + 1, 255, 255, 255);
+					ws2812b.set_range(i * 3, 3, 255, 255, 255);
 				} else {
-					ws2812b.set_range(i * 2, i * 2 + 1, 0, 0, 0);
+					ws2812b.set_range(i * 3, 3, 0, 0, 0);
 				}
 			}
 
