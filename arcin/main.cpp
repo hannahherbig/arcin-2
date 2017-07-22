@@ -61,40 +61,42 @@ static Pin led2 = GPIOA[9];
 
 USB_f1 usb(USB, dev_desc_p, conf_desc_p);
 
+#define NUM_LEDS 27
+
 class WS2812B {
 	private:
-		uint8_t dmabuf[25];
-		volatile uint32_t cnt;
+		uint8_t grb[NUM_LEDS * 3];
+		uint8_t dmabuf[NUM_LEDS * 3 * 8 + 1];
 		volatile bool busy;
 		
 		void schedule_dma() {
-			cnt--;
-			
-			DMA1.reg.C[6].NDTR = 25;
+			DMA1.reg.C[6].NDTR = NUM_LEDS * 3 * 8 + 1;
 			DMA1.reg.C[6].MAR = (uint32_t)&dmabuf;
 			DMA1.reg.C[6].PAR = (uint32_t)&TIM4.CCR3;
 			DMA1.reg.C[6].CR = (0 << 10) | (1 << 8) | (1 << 7) | (0 << 6) | (1 << 4) | (1 << 1) | (1 << 0);
 		}
-		
-		void set_color(uint8_t r, uint8_t g, uint8_t b) {
+
+	public:
+
+		void refresh() {
+			if (busy) return;
+
 			uint32_t n = 0;
-			
-			for(uint32_t i = 8; i-- > 0; n++) {
-				dmabuf[n] = g & (1 << i) ? 58 : 29;
+
+			for (uint32_t i = 0; i < NUM_LEDS * 3; ++i) {
+				uint8_t v = grb[i];
+
+				for(uint32_t i = 8; i-- > 0;)
+					dmabuf[n++] = v & (1 << i) ? 58 : 29;
 			}
-			
-			for(uint32_t i = 8; i-- > 0; n++) {
-				dmabuf[n] = r & (1 << i) ? 58 : 29;
-			}
-			
-			for(uint32_t i = 8; i-- > 0; n++) {
-				dmabuf[n] = b & (1 << i) ? 58 : 29;
-			}
-			
+
 			dmabuf[n] = 0;
+
+			busy = true;
+
+			schedule_dma();
 		}
 		
-	public:
 		void init() {
 			RCC.enable(RCC.TIM4);
 			RCC.enable(RCC.DMA1);
@@ -116,27 +118,26 @@ class WS2812B {
 			
 			Time::sleep(1);
 			
-			update(0, 0, 0);
+			memcpy(grb, 0, NUM_LEDS * 3);
+
+			busy = false;
+
+			refresh();
 		}
-		
-		void update(uint8_t r, uint8_t g, uint8_t b) {
-			set_color(r, g, b);
-			
-			cnt = 15;
-			busy = true;
-			
-			schedule_dma();
+
+		void set_range(uint32_t lo, uint32_t hi, uint8_t r, uint8_t g, uint8_t b) {
+			for (uint32_t i = lo, j = lo * 3; i <= hi; ++i) {
+				grb[j++] = g;
+				grb[j++] = r;
+				grb[j++] = b;
+			}
 		}
 		
 		void irq() {
 			DMA1.reg.C[6].CR = 0;
 			DMA1.reg.IFCR = 1 << 24;
 			
-			if(cnt) {
-				schedule_dma();
-			} else {
-				busy = false;
-			}
+			busy = false;
 		}
 };
 
@@ -202,8 +203,17 @@ class HID_arcin : public USB_HID {
 			
 			last_led_time = Time::time();
 			button_leds.set(report->leds);
-			
-			ws2812b.update(report->r, report->b, report->g);
+			uint8_t more = report->more;
+
+			for (uint32_t i = 0; i < 8; ++i) {
+				if (more & (1 << i)) {
+					ws2812b.set_range(i * 2, i * 2 + 1, 255, 255, 255);
+				} else {
+					ws2812b.set_range(i * 2, i * 2 + 1, 0, 0, 0);
+				}
+			}
+
+			ws2812b.refresh();
 			
 			return true;
 		}
@@ -361,7 +371,7 @@ int main() {
 	
 	Axis* axis_1;
 	
-	if(1) {
+	if(0) {
 		RCC.enable(RCC.ADC12);
 		
 		axis_ana1.enable();
@@ -383,7 +393,7 @@ int main() {
 	
 	Axis* axis_2;
 	
-	if(1) {
+	if(0) {
 		RCC.enable(RCC.ADC12);
 		
 		axis_ana2.enable();

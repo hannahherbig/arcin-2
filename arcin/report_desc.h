@@ -164,13 +164,16 @@ auto report_desc = gamepad(
 		report_count(1),
 		output(0x02)
 	),
+
+	// Fake LEDs to be mapped to ws2812b
+	logical_maximum(1),
 	
 	usage_page(UsagePage::Ordinal),
 	usage(14),
 	collection(Collection::Logical, 
 		usage_page(UsagePage::LED),
 		usage(0x4b),
-		report_size(8),
+		report_size(1),
 		report_count(1),
 		output(0x02)
 	),
@@ -180,7 +183,7 @@ auto report_desc = gamepad(
 	collection(Collection::Logical, 
 		usage_page(UsagePage::LED),
 		usage(0x4b),
-		report_size(8),
+		report_size(1),
 		report_count(1),
 		output(0x02)
 	),
@@ -190,7 +193,57 @@ auto report_desc = gamepad(
 	collection(Collection::Logical, 
 		usage_page(UsagePage::LED),
 		usage(0x4b),
-		report_size(8),
+		report_size(1),
+		report_count(1),
+		output(0x02)
+	),
+	
+	usage_page(UsagePage::Ordinal),
+	usage(17),
+	collection(Collection::Logical, 
+		usage_page(UsagePage::LED),
+		usage(0x4b),
+		report_size(1),
+		report_count(1),
+		output(0x02)
+	),
+	
+	usage_page(UsagePage::Ordinal),
+	usage(18),
+	collection(Collection::Logical, 
+		usage_page(UsagePage::LED),
+		usage(0x4b),
+		report_size(1),
+		report_count(1),
+		output(0x02)
+	),
+	
+	usage_page(UsagePage::Ordinal),
+	usage(19),
+	collection(Collection::Logical, 
+		usage_page(UsagePage::LED),
+		usage(0x4b),
+		report_size(1),
+		report_count(1),
+		output(0x02)
+	),
+	
+	usage_page(UsagePage::Ordinal),
+	usage(20),
+	collection(Collection::Logical, 
+		usage_page(UsagePage::LED),
+		usage(0x4b),
+		report_size(1),
+		report_count(1),
+		output(0x02)
+	),
+	
+	usage_page(UsagePage::Ordinal),
+	usage(21),
+	collection(Collection::Logical, 
+		usage_page(UsagePage::LED),
+		usage(0x4b),
+		report_size(1),
 		report_count(1),
 		output(0x02)
 	),
@@ -235,9 +288,7 @@ struct output_report_t {
 	uint16_t leds;
 	uint8_t led1;
 	uint8_t led2;
-	uint8_t r;
-	uint8_t g;
-	uint8_t b;
+	uint8_t more;
 } __attribute__((packed));
 
 struct bootloader_report_t {
